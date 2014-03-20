@@ -20,7 +20,8 @@ def create_all_hexagons(center, side_length, location_manager):
   root_hexagon = location_manager(
     center=center_point,
     northern_most_unit_vector_direction=numpy.array([(0, 1)]).T,
-    side_length=side_length
+    side_length=side_length,
+    color=(127, 127, 127)
   )
   level_1_hexagons = root_hexagon.create_internal_hexagons()
   level_2_hexagons = []

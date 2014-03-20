@@ -3,7 +3,8 @@ from utils import RANDOM_COLOR
 from utils import transform_points_for_pygame
 from shapely.geometry import Polygon
 import pygame
-
+from colors import ColourGenerator
+COLORS = ColourGenerator()
 
 pi_d_3 = numpy.pi/3
 sin_60_degrees = numpy.sin(pi_d_3)
@@ -49,7 +50,7 @@ class Hexagon(Polygon):
       self.depth = depth
       self.internal_hexagons = None
 
-    self.color = color if color is not None else RANDOM_COLOR()
+    self.color = color if color is not None else COLORS.get_next_RGB()
     # Keys are the phone IDs, values are pointers to the PCS cell or
     #  Registration Area.
 
