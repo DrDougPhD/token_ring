@@ -87,8 +87,7 @@ if __name__ == "__main__":
   current_depth = len(hexagons)-1
 
   phone_dict = create_phones(PCS_cells)
-  phone_labels = phone_dict.keys()
-
+  phone_labels = [ord(k) for k in phone_dict.keys()]
   selected_phone = phone_dict['a']
   draw_all_hexagons(hexagons[current_depth], selected_phone)
 
@@ -138,7 +137,7 @@ if __name__ == "__main__":
           selected_phone.move_by((-1, 0))
 
         # Test if one of the cell phone labels have been selected.
-        elif event.key in [ord(k) for k in phone_labels]:
+        elif event.key in phone_labels:
           # We now need to determine if the user is selecting a cell phone, or
           #  if they are calling a cell phone.
           key = chr(event.key)
@@ -161,11 +160,6 @@ if __name__ == "__main__":
         # Check to see if the phone is still in the previously set cell.
         if selected_phone.has_moved_to_new_cell():
           selected_phone.update_location()
-
-          print("Cost: Reads := {0}, Writes := {1}".format(
-            selected_phone.num_reads,
-            selected_phone.num_writes
-          ))
 
         # Redraw the hexagons that are on the currently selected depth.
         draw_all_hexagons(hexagons[current_depth], selected_phone)

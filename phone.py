@@ -88,24 +88,21 @@ class Phone(pygame.sprite.Sprite, Point):
     self.mobility += 1
     if self.PCS_cell is None:
       #  1. None -> Cell
-      for h in self.cells:
-        if h.contains(self):
-          self.PCS_cell = h
-          return
+      self.find_and_update_cell()
 
     else:
       #  2. Cell -> Cell
       #  3. Cell -> None
       old_cell = self.PCS_cell
       self.PCS_cell = None
-      for h in self.cells:
-        if h.contains(self):
-          self.PCS_cell = h
+      self.find_and_update_cell()
 
-      if self.PCS_cell is None:
-        # The phone has roamed out of its coverage area, and thus should
-        #  perform a dark area deregister.
-        old_cell.dark_spot_deregister(self)
+
+  def find_and_update_cell(self):
+    for h in self.cells:
+      if h.contains(self):
+        self.PCS_cell = h
+        return
 
 
   def call(self, callee):
