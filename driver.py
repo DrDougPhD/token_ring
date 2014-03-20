@@ -14,7 +14,7 @@ from settings import Y_RES
 from hexagon import Hexagon
 from phone import Phone
 
-def draw_all_hexagons(center, side_length, location_manager):
+def create_all_hexagons(center, side_length, location_manager):
   center_point = numpy.array([(center)]).T
   # Create all hexagons within the viewing window.
   root_hexagon = location_manager(
@@ -22,20 +22,10 @@ def draw_all_hexagons(center, side_length, location_manager):
     northern_most_unit_vector_direction=numpy.array([(0, 1)]).T,
     side_length=side_length
   )
-  root_hexagon.draw()
   level_1_hexagons = root_hexagon.create_internal_hexagons()
   level_2_hexagons = []
   for h in level_1_hexagons:
-    h.draw()
     level_2_hexagons.extend(h.create_internal_hexagons())
-
-  for h in level_2_hexagons:
-    h.draw()
-
-  for h in level_2_hexagons:
-    h.draw(color=(0,0,0), width=1)
-  for h in level_1_hexagons:
-    h.draw(color=(0,0,0), width=1)
 
   hexagons = [
     [root_hexagon],
@@ -44,24 +34,19 @@ def draw_all_hexagons(center, side_length, location_manager):
   ]
   return hexagons
 
-if __name__ == "__main__":
-  import sys
-  pygame.init()
 
-  screen = pygame.display.set_mode((X_RES, Y_RES))
-  BACKGROUND_COLOR = (127, 127, 127)
-  screen.fill(BACKGROUND_COLOR)
+def draw_all_hexagons(hexagons, phone):
+  for h in hexagons:
+    h.draw()
 
-  # Create every hexagon on each level.
-  hexagons = draw_all_hexagons(
-    center=(X_RES/2, Y_RES/2),
-    side_length=Y_RES/2,
-    location_manager=Hexagon
-  )
-  PCS_cells = hexagons[-1]
-  current_depth = len(hexagons)-1
-  current_depth_hexagons = hexagons[current_depth]
+  for h in hexagons:
+    if phone.PCS_cell != h:
+      h.draw(color=(0,0,0), width=2)
+    else:
+      h.draw(color=(255,255,255), width=5)
 
+
+def create_phones(cells):
   phone_labels = ['a', 'b', 'c', 'd', 'e']
   random_coord_within_screen = lambda coords: [
     random.randint(0, coords[i]) for i in range(2)
@@ -81,8 +66,31 @@ if __name__ == "__main__":
       center=phone_locations[phone_labels.index(l)],
       cells=PCS_cells
     )
+  return phone_dict
+
+
+if __name__ == "__main__":
+  import sys
+  pygame.init()
+
+  screen = pygame.display.set_mode((X_RES, Y_RES))
+  BACKGROUND_COLOR = (127, 127, 127)
+  screen.fill(BACKGROUND_COLOR)
+
+  # Create every hexagon on each level.
+  hexagons = create_all_hexagons(
+    center=(X_RES/2, Y_RES/2),
+    side_length=Y_RES/2,
+    location_manager=Hexagon
+  )
+  PCS_cells = hexagons[-1]
+  current_depth = len(hexagons)-1
+
+  phone_dict = create_phones(PCS_cells)
+  phone_labels = phone_dict.keys()
 
   selected_phone = phone_dict['a']
+  draw_all_hexagons(hexagons[current_depth], selected_phone)
 
   # Draw each phone on the screen.
   for k in phone_dict:
@@ -150,11 +158,6 @@ if __name__ == "__main__":
             selected_phone = phone_dict[key]
             print("Phone #{0} is selected.".format(selected_phone.id))
 
-        # Redraw the hexagons that are on the currently selected depth.
-        current_depth_hexagons = hexagons[current_depth]
-        for h in current_depth_hexagons:
-          h.draw()
-
         # Check to see if the phone is still in the previously set cell.
         if selected_phone.has_moved_to_new_cell():
           selected_phone.update_location()
@@ -164,16 +167,8 @@ if __name__ == "__main__":
             selected_phone.num_writes
           ))
 
-        cell = selected_phone.PCS_cell
-        if cell is not None:
-          cell.draw(color=(255,255,255), width=5)
-
-        for h in current_depth_hexagons:
-          # Determine which hexagon currently contains the selected phone.
-          if h != selected_phone.PCS_cell:
-            h.draw(color=(0,0,0), width=2)
-          else:
-            h.draw(color=(255,255,255), width=5)
+        # Redraw the hexagons that are on the currently selected depth.
+        draw_all_hexagons(hexagons[current_depth], selected_phone)
 
         # Draw all of the phones to the screen.
         phones.update()
