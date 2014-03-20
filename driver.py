@@ -158,6 +158,10 @@ if __name__ == "__main__":
             selected_phone = phone_dict[key]
             print("Phone #{0} is selected.".format(selected_phone.id))
 
+        # Execute the next step of the Token Ring algorithm.
+        elif event.key == pygame.K_SPACE:
+          print("SPACE!!!")
+
         # Check to see if the phone is still in the previously set cell.
         if selected_phone.has_moved_to_new_cell():
           selected_phone.update_location()

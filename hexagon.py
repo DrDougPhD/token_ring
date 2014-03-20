@@ -50,7 +50,7 @@ class Hexagon(Polygon):
       self.depth = depth
       self.internal_hexagons = None
 
-    self.color = color if color is not None else COLORS.get_next_RGB()
+    self.color = color if color is not None else RANDOM_COLOR() #COLORS.get_next_RGB()
     # Keys are the phone IDs, values are pointers to the PCS cell or
     #  Registration Area.
 
