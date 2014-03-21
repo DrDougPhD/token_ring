@@ -110,26 +110,8 @@ class Hexagon(Polygon):
     # The following member variables correspond to points to neighboring
     #  hexagons related to the topological relationship between this hexagon
     #  and neighboring hexagons.
-    self.neighboring_hexagons = [
-      self.__class__(self, depth=self.depth) for i in range(6)
-    ]
-    self.northeast_hexagon,\
-    self.east_hexagon,\
-    self.southeast_hexagon,\
-    self.southwest_hexagon,\
-    self.west_hexagon,\
-    self.northwest_hexagon = self.neighboring_hexagons
-
-    self.internal_hexagons = [
-      self.__class__(parent=self, depth=self.depth+1) for i in range(7)]
-    self.north_internal_hex,\
-    self.northeast_internal_hex,\
-    self.southeast_internal_hex,\
-    self.south_internal_hex,\
-    self.southwest_internal_hex,\
-    self.northwest_internal_hex,\
-    self.center_internal_hex = self.internal_hexagons
-
+    self.neighboring_hexagons = [None for i in range(6)]
+    self.internal_hexagons = [None for i in range(7)]
     self.parent = parent
 
 

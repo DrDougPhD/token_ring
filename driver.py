@@ -29,7 +29,6 @@ def create_all_hexagons(center, side_length, location_manager):
     level_2_hexagons.extend(h.create_internal_hexagons())
 
   hexagons = [
-    [root_hexagon],
     level_1_hexagons,
     level_2_hexagons
   ]
@@ -73,17 +72,15 @@ def create_phones(cells):
 class MobileHost(Phone):
   def __init__(self, *args, **kwargs):
     Phone.__init__(self, *args, **kwargs)
-    self.counter = 0
-    self.Flag = False
-    self.tokenMH = False
 
 
   def request(self):
-    self.counter += 1 # NOT sure what we are doing with this
-    self.localMSS.priorityNumber += 1
-    self.priorityNumber = self.localMSS.priorityNumber
-    # MSS local to the MH sending the message;not sure if syntax is correct
-    self.localMSS.Q.append([self, self.counter, self.Flag, self.priorityNumber]) 
+    pass
+
+
+  def has_moved_to_new_cell(self):
+    # Only return True if the mobile host has moved to a new proxy region.
+    pass
 
 
   def update_location(self):
@@ -99,24 +96,28 @@ class MobileHost(Phone):
 
 
   def release(self):
-    self.tokenMH = False
-    self.delete()
+    pass
 
 
   def delete(self):
-	  for mss in self.cells:
-		  mss.remove_from_Q(self)
-		  mss.priorityNumber -= 1
-		  mss.counter -= 1
+    pass
 
 
+# from hexagon import Hexagon
+from hexagon import rotate_60
+from hexagon import I_2
 class MobileServiceStation(Hexagon):
+  # MSS must know which proxy it is under. When a mobile host joins this MSS,
+  #  the MSS must be able to compare the identify of the proxy in which the
+  #  mobile host was previously in with this MSS's current proxy.
+  #  If the mobile host has made a wide-area move, this MSS must inform the
+  #  initial proxy of the new proxy.
+
+  # Requests for the token from a local mobile host must be forwarded to the
+  #  proxy of this MSS.
+
   def __init__(self, *args, **kwargs):
     Hexagon.__init__(self, *args, **kwargs)
-    self.tokenMSS = False
-    self.counter = 0
-    self.priorityNumber = 0
-    self.Q = []
 
 
   def join(self, mobile_host, old_station):
@@ -126,6 +127,128 @@ class MobileServiceStation(Hexagon):
   def remove_from_Q(self, mobile_host):
     pass
 
+
+class TokenRequest:
+  def __init__(self, mobile_host, proxy):
+    self.mobile_host = mobile_host
+    self.proxy = proxy
+
+
+class Proxy(Hexagon):
+  # When a mobile host underneath this proxy makes a request for the token,
+  #  it requests the token from its local MSS. This MSS then forwards this
+  #  request to its proxy.
+
+  # If this Proxy is holding a request for a mobile host, and that mobile host
+  #  has moved, then this proxy will receive an update of this move which
+  #  contains the identify of the mobile host and its current proxy.
+
+  # The Proxies form a token ring. When this proxy receives the token, the
+  #  request queue is shifted into the grant queue. Until the grant queue is
+  #  empty:
+  #    1. Pop a request from the queue.
+  #    2. If the mobile host of this request is within this proxy, then search
+  #        each MSS under this proxy for that mobile host. Once the MSS is
+  #        found, issue that MSS the token so that it can issue the token to
+  #        the mobile host.
+  #    3. If the mobile host of this request is not local, then deliver the
+  #        token to the current proxy of the mobile host.
+  #    4. The remote proxy will return the token once the mobile host releases
+  #        it.
+  #  Once the grant queue is empty, forward the token to the next proxy.
+  def __init__(self, *args, **kwargs):
+    Hexagon.__init__(self, *args, **kwargs)
+    self.next_proxy = None
+    self.local_MSSs = self.create_internal_MSSs()
+
+
+  def create_internal_MSSs(self):
+    M = 2*rotate_60 + I_2
+    new_north_direction = M.I*self.northeast_dir
+    new_side_length = numpy.linalg.norm(new_north_direction)
+
+    if (self.depth+1)%2 == 0:
+      north_unit_vector = numpy.array([(0, 1)]).T
+
+    else:
+      north_unit_vector = new_north_direction/new_side_length
+
+    internal_center_hexagon = MobileServiceStation(
+      center=self.center,
+      northern_most_unit_vector_direction=north_unit_vector,
+      side_length=new_side_length,
+      parent=self,
+      depth=self.depth+1
+    )
+    for i in range(self.number_of_sides):
+      center = internal_center_hexagon.get_center_point_of_neighbor(i)
+      self.internal_hexagons[i] = MobileServiceStation(
+        center=center,
+        northern_most_unit_vector_direction=north_unit_vector,
+        side_length=new_side_length,
+        parent=self,
+        depth=self.depth+1
+      )
+
+    # Set the center hexagon.
+    self.internal_hexagons[-1] = internal_center_hexagon
+
+    return self.internal_hexagons
+
+
+class ProxyCreator(Hexagon):
+  def __init__(self, *args, **kwargs):
+    Hexagon.__init__(self, *args, **kwargs)
+    self.proxies = self.create_proxies()
+
+    # Create the MSS regions within each proxy.
+    self.service_stations = []
+    for p in self.proxies:
+      self.service_stations.extend(p.local_MSSs)
+
+
+  def create_proxies(self):
+    M = 2*rotate_60 + I_2
+    new_north_direction = M.I*self.northeast_dir
+    new_side_length = numpy.linalg.norm(new_north_direction)
+
+    if (self.depth+1)%2 == 0:
+      north_unit_vector = numpy.array([(0, 1)]).T
+
+    else:
+      north_unit_vector = new_north_direction/new_side_length
+
+    internal_center_hexagon = Proxy(
+      center=self.center,
+      northern_most_unit_vector_direction=north_unit_vector,
+      side_length=new_side_length,
+      parent=self,
+      depth=self.depth+1
+    )
+    for i in range(self.number_of_sides):
+      center = internal_center_hexagon.get_center_point_of_neighbor(i)
+      self.internal_hexagons[i] = Proxy(
+        center=center,
+        northern_most_unit_vector_direction=north_unit_vector,
+        side_length=new_side_length,
+        parent=self,
+        depth=self.depth+1
+      )
+
+    # Set the center hexagon.
+    self.internal_hexagons[-1] = internal_center_hexagon
+
+    self.create_proxy_ring()
+    return self.internal_hexagons
+
+
+  def create_proxy_ring(self):
+    for i in range(len(self.internal_hexagons)):
+      self.internal_hexagons[i].next_proxy = self.internal_hexagons[
+        (i+1) % len(self.internal_hexagons)
+      ]
+
+
 if __name__ == "__main__":
   import sys
   pygame.init()
@@ -134,12 +257,17 @@ if __name__ == "__main__":
   BACKGROUND_COLOR = (127, 127, 127)
   screen.fill(BACKGROUND_COLOR)
 
-  # Create every hexagon on each level.
-  hexagons = create_all_hexagons(
-    center=(X_RES/2, Y_RES/2),
+  root = ProxyCreator(
+    center=numpy.array([(X_RES/2, Y_RES/2)]).T,
+    northern_most_unit_vector_direction=numpy.array([(0, 1)]).T,
     side_length=Y_RES/2,
-    location_manager=Hexagon
+    color=(127, 127, 127)
   )
+
+  hexagons = [
+    root.proxies,
+    root.service_stations
+  ]
   PCS_cells = hexagons[-1]
   current_depth = len(hexagons)-1
 
