@@ -160,6 +160,9 @@ class Proxy(Hexagon):
     Hexagon.__init__(self, *args, **kwargs)
     self.next_proxy = None
     self.local_MSSs = self.create_internal_MSSs()
+    self.has_token = False
+    self.requests = []
+    self.grant_queue = []
 
 
   def create_internal_MSSs(self):
@@ -178,7 +181,8 @@ class Proxy(Hexagon):
       northern_most_unit_vector_direction=north_unit_vector,
       side_length=new_side_length,
       parent=self,
-      depth=self.depth+1
+      depth=self.depth+1,
+      color=self.color
     )
     for i in range(self.number_of_sides):
       center = internal_center_hexagon.get_center_point_of_neighbor(i)
@@ -187,13 +191,53 @@ class Proxy(Hexagon):
         northern_most_unit_vector_direction=north_unit_vector,
         side_length=new_side_length,
         parent=self,
-        depth=self.depth+1
+        depth=self.depth+1,
+        color=self.color
       )
 
     # Set the center hexagon.
     self.internal_hexagons[-1] = internal_center_hexagon
 
     return self.internal_hexagons
+
+
+  def send_token(self):
+    self.has_token = True
+
+
+  def pass_token(self):
+    self.next_proxy.send_token()
+    self.has_token = False
+
+
+  def progress(self):
+    if self.has_token:
+      # If the Request Queue is not empty, then it must be served.
+      if self.requests and len(self.grant_queue) == 0:
+        self.grant_queue = list(self.requests)
+        self.requests = []
+
+      # If the Grant Queue is not empty, serve the next grant.
+      if self.grant_queue:
+        request = self.grant_queue.pop(0)
+
+      else:
+        self.pass_token()
+
+
+  def draw(self, color=None, width=0):
+    Hexagon.draw(self, color, width)
+    if self.has_token:
+      from utils import transform_points_for_pygame
+      x = int(float(self.center[0]))
+      y = int(float(self.center[1]))
+      circle_center = (x, y)
+      pygame.draw.circle(
+        pygame.display.get_surface(),
+        (218,165,32), # goldenrod
+        transform_points_for_pygame([circle_center])[0],
+        10
+      )
 
 
 class ProxyCreator(Hexagon):
@@ -249,6 +293,20 @@ class ProxyCreator(Hexagon):
       ]
 
 
+def create_proxies_and_MSSs():
+  root = ProxyCreator(
+    center=numpy.array([(X_RES/2, Y_RES/2)]).T,
+    northern_most_unit_vector_direction=numpy.array([(0, 1)]).T,
+    side_length=Y_RES/2,
+    color=(127, 127, 127)
+  )
+
+  return [
+    root.proxies,
+    root.service_stations
+  ]
+
+
 if __name__ == "__main__":
   import sys
   pygame.init()
@@ -257,19 +315,14 @@ if __name__ == "__main__":
   BACKGROUND_COLOR = (127, 127, 127)
   screen.fill(BACKGROUND_COLOR)
 
-  root = ProxyCreator(
-    center=numpy.array([(X_RES/2, Y_RES/2)]).T,
-    northern_most_unit_vector_direction=numpy.array([(0, 1)]).T,
-    side_length=Y_RES/2,
-    color=(127, 127, 127)
-  )
-
-  hexagons = [
-    root.proxies,
-    root.service_stations
-  ]
+  hexagons = create_proxies_and_MSSs()
   PCS_cells = hexagons[-1]
   current_depth = len(hexagons)-1
+
+  # Give the first proxy the token.
+  proxies = hexagons[0]
+  token_holder = proxies[0]
+  token_holder.send_token()
 
   phone_dict = create_phones(PCS_cells)
   phone_labels = [ord(k) for k in phone_dict.keys()]
@@ -346,6 +399,9 @@ if __name__ == "__main__":
         # Execute the next step of the Token Ring algorithm.
         elif event.key == pygame.K_SPACE:
           print("SPACE!!!")
+          token_holder.progress()
+          if not token_holder.has_token:
+            token_holder = token_holder.next_proxy
 
         # Check to see if the phone is still in the previously set cell.
         if selected_phone.has_moved_to_new_cell():
