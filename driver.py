@@ -70,6 +70,62 @@ def create_phones(cells):
   return phone_dict
 
 
+class MobileHost(Phone):
+  def __init__(self, *args, **kwargs):
+    Phone.__init__(self, *args, **kwargs)
+    self.counter = 0
+    self.Flag = False
+    self.tokenMH = False
+
+
+  def request(self):
+    self.counter += 1 # NOT sure what we are doing with this
+    self.localMSS.priorityNumber += 1
+    self.priorityNumber = self.localMSS.priorityNumber
+    # MSS local to the MH sending the message;not sure if syntax is correct
+    self.localMSS.Q.append([self, self.counter, self.Flag, self.priorityNumber]) 
+
+
+  def update_location(self):
+    # Preserve a reference to the old MSS before updating.
+    old_MSS = self.PCS_cell
+
+    # Update the location of the phone by finding the new MSS in which it is
+    #  located.
+    Phone.update_location(self)
+
+    # Join this MSS, passing in a reference to the old MSS.
+    self.PCS_cell.join(self, old_MSS)
+
+
+  def release(self):
+    self.tokenMH = False
+    self.delete()
+
+
+  def delete(self):
+	  for mss in self.cells:
+		  mss.remove_from_Q(self)
+		  mss.priorityNumber -= 1
+		  mss.counter -= 1
+
+
+class MobileServiceStation(Hexagon):
+  def __init__(self, *args, **kwargs):
+    Hexagon.__init__(self, *args, **kwargs)
+    self.tokenMSS = False
+    self.counter = 0
+    self.priorityNumber = 0
+    self.Q = []
+
+
+  def join(self, mobile_host, old_station):
+    pass
+
+
+  def remove_from_Q(self, mobile_host):
+    pass
+
 if __name__ == "__main__":
   import sys
   pygame.init()
@@ -150,6 +206,7 @@ if __name__ == "__main__":
             # The phone initiating the call is the currently selected phone.
             # We must now make sure the callee is not the same as the caller.
             mobile_host = phone_dict[key]
+            mobile_host.request()
             print("Phone #{0} is doing something!".format(mobile_host.id))
 
           else:
