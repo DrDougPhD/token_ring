@@ -1,6 +1,9 @@
 from utils import transform_points_for_pygame
 import pygame
 from shapely.geometry import Point
+import os
+ABS_PATH = os.path.dirname(__file__)
+
 class Phone(pygame.sprite.Sprite, Point):
   movement_offset = 10
 
@@ -26,7 +29,9 @@ class Phone(pygame.sprite.Sprite, Point):
 
     # These member variables are required for this Phone class to be a
     #  sprite.
-    self.image = pygame.image.load("phone.png").convert_alpha()
+    self.image = pygame.image.load(
+      os.path.join(ABS_PATH, "phone.png")
+    ).convert_alpha()
     self.rect = self.image.get_rect()
     self.rect.center = transform_points_for_pygame([center])[0]
 
