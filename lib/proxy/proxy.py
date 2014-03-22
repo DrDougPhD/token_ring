@@ -6,6 +6,7 @@ from .request import TokenRequest
 import numpy
 from .mss import MobileServiceStation
 import pygame
+from ..utils import transform_points_for_pygame
 
 class Proxy(Hexagon):
   # When a mobile host underneath this proxy makes a request for the token,
@@ -184,7 +185,6 @@ class Proxy(Hexagon):
   def draw(self, color=None, width=0):
     Hexagon.draw(self, color, width)
     if self.has_token:
-      from utils import transform_points_for_pygame
       x = int(float(self.center[0]))
       y = int(float(self.center[1]))
       circle_center = (x, y)
