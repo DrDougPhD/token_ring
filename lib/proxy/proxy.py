@@ -41,8 +41,9 @@ class Proxy(Hexagon):
 
 
   def request_token(self, phone):
-    print("Proxy {0} received a token request from phone {1}".format(
+    print("Proxy {0} received a token request from MSS {1} for phone {2}".format(
       self.id,
+      phone.PCS_cell.id,
       phone.id
     ))
     self.requests.append(
