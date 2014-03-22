@@ -27,12 +27,14 @@ def create_phones(cells, X_RES, Y_RES):
 class MobileHost(Phone):
   def __init__(self, *args, **kwargs):
     Phone.__init__(self, *args, **kwargs)
+    self.num_requests = 0
     self.request_made_to_MSS = None
 
 
   def request_token(self):
     if self.request_made_to_MSS is None:
       print("Phone {0} is requesting the token".format(self.id))
+      self.num_requests += 1
       self.PCS_cell.request_token(self)
       self.request_made_to_MSS = self.PCS_cell
 
@@ -54,7 +56,7 @@ class MobileHost(Phone):
       old_MSS.id,
       self.PCS_cell.id
     ))
-    self.PCS_cell.join(self, self.request_made_to_MSS)
+    self.PCS_cell.join(self)
 
 
   def send_token(self):

@@ -15,15 +15,17 @@ class MobileServiceStation(Hexagon):
     Hexagon.__init__(self, *args, **kwargs)
 
 
-  def join(self, mobile_host, old_station):
+  def join(self, mobile_host):
     print("MSS {0} received JOIN from phone {1}".format(
       self.id,
       mobile_host.id
     ))
 
+    old_station = mobile_host.request_made_to_MSS
     if old_station is not None and old_station.parent != self.parent:
       proxy_of_old_MSS = old_station.parent
       self.parent.join(mobile_host, proxy_of_old_MSS)
+
 
   def request_token(self, phone):
     print("MSS {0} received a token request from phone {1}".format(

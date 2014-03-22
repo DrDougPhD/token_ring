@@ -38,8 +38,8 @@ if __name__ == "__main__":
   current_depth = len(hexagons)-1
 
   # Give the first proxy the token.
-  proxies = hexagons[0]
-  token_holder = proxies[0]
+  token_ring = hexagons[0]
+  token_holder = token_ring[0]
   token_holder.send_token()
 
   from lib.proxy.mh import create_phones
