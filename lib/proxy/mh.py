@@ -51,8 +51,8 @@ class MobileHost(Phone):
     # Join this MSS, passing in a reference to the old MSS.
     print("Mobile host {0} has moved from MSS {1} to MSS {2}".format(
       self.id,
-      id(old_MSS),
-      id(self.PCS_cell)
+      old_MSS.id,
+      self.PCS_cell.id
     ))
     self.PCS_cell.join(self, self.request_made_to_MSS)
 

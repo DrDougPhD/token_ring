@@ -17,7 +17,7 @@ class MobileServiceStation(Hexagon):
 
   def join(self, mobile_host, old_station):
     print("MSS {0} received JOIN from phone {1}".format(
-      id(self),
+      self.id,
       mobile_host.id
     ))
 
@@ -27,7 +27,7 @@ class MobileServiceStation(Hexagon):
 
   def request_token(self, phone):
     print("MSS {0} received a token request from phone {1}".format(
-      id(self),
+      self.id,
       phone.id
     ))
     self.parent.request_token(phone)
@@ -37,19 +37,19 @@ class MobileServiceStation(Hexagon):
     # Since the MSS is a derived Hexagon type, which is a derived Polygon,
     #  the function contains() will determine if the phone's location
     #  is contained within the hexagon.
-    print("MSS {0} queried if it has phone {1}".format(id(self), phone.id))
+    print("MSS {0} queried if it has phone {1}".format(self.id, phone.id))
     print("    {0}".format(self == phone.PCS_cell))
     return self == phone.PCS_cell
 
 
   def serve_token(self, phone):
     print("MSS {0} will grant the token to phone {1}".format(
-      id(self),
+      self.id,
       phone.id
     ))
     phone.send_token()
     print("Token returned from phone {0} to MSS {1}".format(
       phone.id,
-      id(self)
+      self.id
     ))
 

@@ -8,6 +8,6 @@ class TokenRequest:
   def __repr__(self):
     return "< Phone({0}), Proxy({1}) >".format(
       self.mobile_host.id,
-      id(self.proxy)
+      self.proxy.id
     )
 

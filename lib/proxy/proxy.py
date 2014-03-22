@@ -42,7 +42,7 @@ class Proxy(Hexagon):
 
   def request_token(self, phone):
     print("Proxy {0} received a token request from phone {1}".format(
-      id(self),
+      self.id,
       phone.id
     ))
     self.requests.append(
@@ -55,9 +55,9 @@ class Proxy(Hexagon):
     #  is no longer under the proxy in which it made its request, then that
     #  proxy must be updated.
     print("Proxy {0} has received JOIN from phone {1}, who made a request on proxy {2}".format(
-      id(self),
+      self.id,
       phone.id,
-      id(old_proxy)
+      old_proxy.id
     ))
     old_proxy.update_request(phone, self)
 
@@ -67,8 +67,8 @@ class Proxy(Hexagon):
     #  has moved, and the request information must be updated.
     print("Updating request from phone {0} on proxy {1} to point to proxy {2}".format(
       phone.id,
-      id(self),
-      id(new_proxy)
+      self.id,
+      new_proxy.id
     ))
     for r in self.requests:
       if r.mobile_host == phone:
@@ -118,8 +118,8 @@ class Proxy(Hexagon):
 
   def pass_token(self):
     print("Sending token: Proxy {0} => Proxy {1}".format(
-      id(self),
-      id(self.next_proxy)
+      self.id,
+      self.next_proxy.id
     ))
     self.is_serving_requests = False
     self.next_proxy.send_token()
@@ -133,7 +133,7 @@ class Proxy(Hexagon):
       if self.requests and len(self.grant_queue) == 0 and not self.is_serving_requests:
         print("Proxy {0} has {1} requests!"
               "Emptying the request queue into the grant queue.".format(
-          id(self),
+          self.id,
           len(self.requests)
         ))
         self.grant_queue = list(self.requests)
@@ -142,11 +142,11 @@ class Proxy(Hexagon):
       # If the Grant Queue is not empty, serve the next grant.
       if self.grant_queue:
         self.is_serving_requests = True
-        print("State of grant queue for proxy {0}:".format(id(self)))
+        print("State of grant queue for proxy {0}:".format(self.id))
         print(self.grant_queue)
         request = self.grant_queue.pop(0)
         print("Proxy {0} is granting request of phone {1}".format(
-          id(self),
+          self.id,
           request.mobile_host.id
         ))
         request.proxy.serve_token(request.mobile_host)
@@ -158,25 +158,25 @@ class Proxy(Hexagon):
   def serve_token(self, phone):
     # The mobile host is under the calling proxy's jurisdiction.
     print("Proxy {0} will now grant the token to phone {1}".format(
-      id(self),
+      self.id,
       phone.id
     ))
     print("Searching for MSS of phone {0}".format(phone.id))
     for mss in self.internal_hexagons:
       if mss.has(phone):
         print("MSS {0} indicates that phone {1} is within its jurisdiction".format(
-          id(mss),
+          mss.id,
           phone.id
         ))
         print("Proxy {0} is granting MSS {1} the token, to grant to phone {2}".format(
-          id(self),
-          id(mss),
+          self.id,
+          mss.id,
           phone.id
         ))
         mss.serve_token(phone)
         print("Proxy {0} has received token back from MSS {1} / Phone {2}".format(
-          id(self),
-          id(mss),
+          self.id,
+          mss.id,
           phone.id
         ))
         return
