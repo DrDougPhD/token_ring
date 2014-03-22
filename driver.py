@@ -31,8 +31,8 @@ if __name__ == "__main__":
   BACKGROUND_COLOR = (127, 127, 127)
   screen.fill(BACKGROUND_COLOR)
 
-  from lib.proxy import setup_coverage_areas
-  #from lib.replication import setup_coverage_areas
+  #from lib.proxy import setup_coverage_areas
+  from lib.replication import setup_coverage_areas
   hexagons = setup_coverage_areas(X_RES, Y_RES)
   PCS_cells = hexagons[-1]
   current_depth = len(hexagons)-1
@@ -42,7 +42,7 @@ if __name__ == "__main__":
   token_holder = token_ring[0]
   token_holder.send_token()
 
-  from lib.proxy.mh import create_phones
+  from lib.mh import create_phones
   phone_dict = create_phones(PCS_cells, X_RES, Y_RES)
   phone_labels = [ord(k) for k in phone_dict.keys()]
   selected_phone = phone_dict['a']
