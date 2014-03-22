@@ -18,16 +18,15 @@ def setup_coverage_areas(X_RES, Y_RES):
   ]
 
 
+from .request import TokenRequest
 class MobileServiceStation(Hexagon):
   def __init__(self, *args, **kwargs):
     Hexagon.__init__(self, *args, **kwargs)
     self.next = None
     self.has_token = False
     self.is_serving_requests = False
-    self.local_num_of_requests = 0
     self.token_rounds = 0
     self.requests = []
-    self.remote_requests = []
     self.local_mobile_hosts = []
 
 
@@ -52,7 +51,7 @@ class MobileServiceStation(Hexagon):
       if self.requests:
         self.is_serving_requests = True
         print("State of request queue for proxy {0}:".format(self.id))
-        print(self.request)
+        print(self.requests)
         request_to_serve = None
         for request in self.requests:
           if request.mobile_host in self.local_mobile_hosts and\
@@ -60,16 +59,23 @@ class MobileServiceStation(Hexagon):
             request_to_serve = request
             break
 
-        if request is not None:
-          print("Proxy {0} is granting request of phone {1}".format(
-            self.id,
-            request.mobile_host.id
-          ))
+        if request_to_serve is not None:
+          self.requests.remove(request)
           self.serve_token(request.mobile_host)
+
+          for mss in self.get_all_neighbors():
+            mss.notify_of_served_request(request)
+
+        else:
+          self.pass_token()
 
       else:
         self.pass_token()
 
+
+  def notify_of_served_request(self, req):
+    print("  Removing {0} from MSS {1}".format(req, self.id))
+    self.requests.remove(req)
 
 
   def send_token(self):
@@ -107,21 +113,34 @@ class MobileServiceStation(Hexagon):
     # Phase 2: Local MSS determines the maximum of all request numbers.
     #  -> Broadcast this request number to all other MSS.
     #  -> Each changes tag on request as deliverable.
-    self.local_num_of_requests += 1
-    maximum_request_number = self.local_num_of_requests
+    maximum_request_number = self.get_local_maximum_request_number() + 1
     neighbors = self.get_all_neighbors()
     for mss in neighbors:
-      i = mss.local_num_of_requests + 1
+      i = mss.get_local_maximum_request_number() + 1
       if i > maximum_request_number:
+        print("Found larger request # from MSS {0}: {1}".format(
+          mss.id,
+          i
+        ))
         maximum_request_number = i
 
     request = TokenRequest(phone, maximum_request_number)
+    print("Phone {0} requested token from MSS {1}, {2}".format(phone.id, self.id, request))
     for mss in neighbors:
       mss.inform_of_new_request(request)
     self.requests.append(request)
 
 
+  def get_local_maximum_request_number(self):
+    if self.requests:
+      return self.requests[-1].request_no
+
+    else:
+      return 0
+
+
   def inform_of_new_request(self, request):
+    print("  MSS {0} notified of {1}".format(self.id, request))
     self.requests.append(request)
 
 
@@ -134,7 +153,13 @@ class MobileServiceStation(Hexagon):
     return neighbors
 
   def serve_token(self, phone):
-    pass
+    print("MSS {0} is serving Phone {1}".format(self.id, phone.id))
+    phone.send_token()
+    print("MSS {0} has received token back from Phone {1}".format(
+      self.id,
+      phone.id
+    ))
+
 
 
 class ReplicationCreator(Hexagon):
