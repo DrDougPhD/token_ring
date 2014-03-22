@@ -27,6 +27,10 @@ class MobileServiceStation(Hexagon):
       self.parent.join(mobile_host, proxy_of_old_MSS)
 
 
+  def unjoin(self, phone):
+    pass
+
+
   def request_token(self, phone):
     print("MSS {0} received a token request from phone {1}".format(
       self.id,
