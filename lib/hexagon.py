@@ -18,6 +18,9 @@ I_2 = numpy.matrix([
   [1, 0],
   [0, 1]
 ])
+M = 2*rotate_60 + I_2
+
+UNIQUE_ID = 1
 
 
 class Hexagon(Polygon):
@@ -26,6 +29,7 @@ class Hexagon(Polygon):
   vertex_order = ["N", "NE", "SE", "S", "SW", "NW"]
   neighbor_index = {"NE": 0, "E": 1, "SE": 2, "SW": 3, "W": 4, "NW": 5}
   vertex_order = {"N": 0, "NE": 1, "SE": 2, "S": 3, "SW": 4, "NW": 5}
+  M_I = M.I
 
   def __init__(self, center=None, northern_most_unit_vector_direction=None,
                side_length=None, parent=None, depth=0, color=None):
@@ -53,6 +57,9 @@ class Hexagon(Polygon):
     self.color = color if color is not None else RANDOM_COLOR() #COLORS.get_next_RGB()
     # Keys are the phone IDs, values are pointers to the PCS cell or
     #  Registration Area.
+    global UNIQUE_ID
+    self.id = UNIQUE_ID
+    UNIQUE_ID += 1
 
 
   def set(self, center, northern_most_unit_vector_direction, side_length, parent, depth=None):
@@ -128,10 +135,14 @@ class Hexagon(Polygon):
 
       # Label the hexagons according to their address id.
       label_font = pygame.font.SysFont("monospace", 12)
-      label = label_font.render(str(id(self)), True, (0, 0, 0))
+      label = label_font.render(
+        str(self.id),
+        True,
+        [255-c for c in self.color]
+      )
       x = float(self.northwest_vertex[0])
       y = float(self.northwest_vertex[1])
-      p = (x, y)
+      p = (x+13, y-13)
       label_top_left_corner = transform_points_for_pygame([p])[0]
       pygame.display.get_surface().blit(
         label,
@@ -152,9 +163,7 @@ class Hexagon(Polygon):
   def create_internal_hexagons(self):
     # Compute the north direction of the hexagons that will be under the root
     #  hexagon.
-
-    M = 2*rotate_60 + I_2
-    new_north_direction = M.I*self.northeast_dir
+    new_north_direction = self.M_I*self.northeast_dir
     new_side_length = numpy.linalg.norm(new_north_direction)
 
     if (self.depth+1)%2 == 0:
