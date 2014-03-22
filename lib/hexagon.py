@@ -172,7 +172,7 @@ class Hexagon(Polygon):
     else:
       north_unit_vector = new_north_direction/new_side_length
 
-    internal_center_hexagon = self.__class__(
+    internal_center_hexagon = Hexagon(
       center=self.center,
       northern_most_unit_vector_direction=north_unit_vector,
       side_length=new_side_length,
@@ -181,7 +181,7 @@ class Hexagon(Polygon):
     )
     for i in range(self.number_of_sides):
       center = internal_center_hexagon.get_center_point_of_neighbor(i)
-      self.internal_hexagons[i].set(
+      self.internal_hexagons[i] = Hexagon(
         center=center,
         northern_most_unit_vector_direction=north_unit_vector,
         side_length=new_side_length,
@@ -190,12 +190,7 @@ class Hexagon(Polygon):
       )
 
     # Set the center hexagon.
-    self.internal_hexagons[-1].set(
-      center=self.center,
-      northern_most_unit_vector_direction=north_unit_vector,
-      side_length=new_side_length,
-      parent=self
-    )
+    self.internal_hexagons[-1] = internal_center_hexagon
     return self.internal_hexagons
 
 

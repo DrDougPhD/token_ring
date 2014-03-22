@@ -1,11 +1,9 @@
 from __future__ import absolute_import
 import numpy
 from ..hexagon import Hexagon
-from ..hexagon import rotate_60
-from ..hexagon import I_2
 from .proxy import Proxy
 
-def create_proxies_and_MSSs(X_RES, Y_RES):
+def setup_coverage_areas(X_RES, Y_RES):
   root = ProxyCreator(
     center=numpy.array([(X_RES/2, Y_RES/2)]).T,
     northern_most_unit_vector_direction=numpy.array([(0, 1)]).T,
@@ -23,16 +21,17 @@ class ProxyCreator(Hexagon):
   def __init__(self, *args, **kwargs):
     Hexagon.__init__(self, *args, **kwargs)
     self.proxies = self.create_proxies()
+    self.ring_members = self.proxies
 
     # Create the MSS regions within each proxy.
     self.service_stations = []
     for p in self.proxies:
       self.service_stations.extend(p.local_MSSs)
+    self.create_ring()
 
 
   def create_proxies(self):
-    M = 2*rotate_60 + I_2
-    new_north_direction = M.I*self.northeast_dir
+    new_north_direction = self.M_I*self.northeast_dir
     new_side_length = numpy.linalg.norm(new_north_direction)
 
     if (self.depth+1)%2 == 0:
@@ -61,12 +60,11 @@ class ProxyCreator(Hexagon):
     # Set the center hexagon.
     self.internal_hexagons[-1] = internal_center_hexagon
 
-    self.create_proxy_ring()
     return self.internal_hexagons
 
 
-  def create_proxy_ring(self):
-    for i in range(len(self.internal_hexagons)):
-      self.internal_hexagons[i].next_proxy = self.internal_hexagons[
-        (i+1) % len(self.internal_hexagons)
+  def create_ring(self):
+    for i in range(len(self.ring_members)):
+      self.ring_members[i].next = self.ring_members[
+        (i+1) % len(self.ring_members)
       ]

@@ -32,7 +32,7 @@ class Proxy(Hexagon):
   #  Once the grant queue is empty, forward the token to the next proxy.
   def __init__(self, *args, **kwargs):
     Hexagon.__init__(self, *args, **kwargs)
-    self.next_proxy = None
+    self.next = None
     self.local_MSSs = self.create_internal_MSSs()
     self.has_token = False
     self.requests = []
@@ -119,10 +119,10 @@ class Proxy(Hexagon):
   def pass_token(self):
     print("Sending token: Proxy {0} => Proxy {1}".format(
       self.id,
-      self.next_proxy.id
+      self.next.id
     ))
     self.is_serving_requests = False
-    self.next_proxy.send_token()
+    self.next.send_token()
     self.has_token = False
 
 

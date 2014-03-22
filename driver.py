@@ -31,8 +31,9 @@ if __name__ == "__main__":
   BACKGROUND_COLOR = (127, 127, 127)
   screen.fill(BACKGROUND_COLOR)
 
-  from lib.proxy import create_proxies_and_MSSs
-  hexagons = create_proxies_and_MSSs(X_RES, Y_RES)
+  from lib.proxy import setup_coverage_areas
+  #from lib.replication import setup_coverage_areas
+  hexagons = setup_coverage_areas(X_RES, Y_RES)
   PCS_cells = hexagons[-1]
   current_depth = len(hexagons)-1
 
@@ -120,7 +121,7 @@ if __name__ == "__main__":
         elif event.key == pygame.K_SPACE:
           token_holder.progress()
           if not token_holder.has_token:
-            token_holder = token_holder.next_proxy
+            token_holder = token_holder.next
 
         # Check to see if the phone is still in the previously set cell.
         if selected_phone.has_moved_to_new_cell():
