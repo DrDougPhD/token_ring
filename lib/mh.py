@@ -1,5 +1,4 @@
-from __future__ import absolute_import
-from ..phone import Phone
+from phone import Phone
 
 def create_phones(cells, X_RES, Y_RES):
   phone_labels = ['a', 'b', 'c', 'd', 'e']
@@ -29,6 +28,8 @@ class MobileHost(Phone):
     Phone.__init__(self, *args, **kwargs)
     self.num_requests = 0
     self.request_made_to_MSS = None
+    if self.PCS_cell is not None:
+      self.PCS_cell.join(self)
 
 
   def request_token(self):
@@ -50,13 +51,21 @@ class MobileHost(Phone):
     #  located.
     Phone.update_location(self)
 
-    # Join this MSS, passing in a reference to the old MSS.
-    print("Mobile host {0} has moved from MSS {1} to MSS {2}".format(
-      self.id,
-      old_MSS.id,
-      self.PCS_cell.id
-    ))
     self.PCS_cell.join(self)
+    if old_MSS is not None:
+      # Join this MSS, passing in a reference to the old MSS.
+      print("Mobile host {0} has moved from MSS {1} to MSS {2}".format(
+        self.id,
+        old_MSS.id,
+        self.PCS_cell.id
+      ))
+      old_MSS.unjoin(self)
+
+    else:
+       print("Mobile host {0} has moved to MSS {1}".format(
+        self.id,
+        self.PCS_cell.id
+      ))
 
 
   def send_token(self):
