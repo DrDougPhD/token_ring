@@ -72,10 +72,17 @@ def create_phones(cells):
 class MobileHost(Phone):
   def __init__(self, *args, **kwargs):
     Phone.__init__(self, *args, **kwargs)
+    self.request_made_to_MSS = None
 
 
-  def request(self):
-    pass
+  def request_token(self):
+    if self.request_made_to_MSS is None:
+      print("Phone {0} is requesting the token".format(self.id))
+      self.PCS_cell.request_token(self)
+      self.request_made_to_MSS = self.PCS_cell
+
+    else:
+      print("Phone {0} already has a pending request!".format(self.id))
 
 
   def update_location(self):
@@ -92,11 +99,15 @@ class MobileHost(Phone):
       id(old_MSS),
       id(self.PCS_cell)
     ))
-    self.PCS_cell.join(self, old_MSS)
+    self.PCS_cell.join(self, self.request_made_to_MSS)
 
 
-  def release(self):
-    pass
+  def send_token(self):
+    print("Phone {0} has received the token!".format(self.id))
+    print("  "+"X"*20)
+    print("    Phone {0} => CRITICAL SECTION".format(self.id))
+    print("  "+"X"*20)
+    self.request_made_to_MSS = None
 
 
   def delete(self):
@@ -129,15 +140,50 @@ class MobileServiceStation(Hexagon):
       proxy_of_old_MSS = old_station.parent
       self.parent.join(mobile_host, proxy_of_old_MSS)
 
+  def request_token(self, phone):
+    print("MSS {0} received a token request from phone {1}".format(
+      id(self),
+      phone.id
+    ))
+    self.parent.request_token(phone)
+
 
   def remove_from_Q(self, mobile_host):
     pass
+
+
+  def has(self, phone):
+    # Since the MSS is a derived Hexagon type, which is a derived Polygon,
+    #  the function contains() will determine if the phone's location
+    #  is contained within the hexagon.
+    print("MSS {0} queried if it has phone {1}".format(id(self), phone.id))
+    print("    {0}".format(self == phone.PCS_cell))
+    return self == phone.PCS_cell
+
+
+  def serve_token(self, phone):
+    print("MSS {0} will grant the token to phone {1}".format(
+      id(self),
+      phone.id
+    ))
+    phone.send_token()
+    print("Token returned from phone {0} to MSS {1}".format(
+      phone.id,
+      id(self)
+    ))
 
 
 class TokenRequest:
   def __init__(self, mobile_host, proxy):
     self.mobile_host = mobile_host
     self.proxy = proxy
+
+
+  def __repr__(self):
+    return "< Phone({0}), Proxy({1}) >".format(
+      self.mobile_host.id,
+      id(self.proxy)
+    )
 
 
 class Proxy(Hexagon):
@@ -169,6 +215,17 @@ class Proxy(Hexagon):
     self.has_token = False
     self.requests = []
     self.grant_queue = []
+    self.is_serving_requests = False
+
+
+  def request_token(self, phone):
+    print("Proxy {0} received a token request from phone {1}".format(
+      id(self),
+      phone.id
+    ))
+    self.requests.append(
+      TokenRequest(mobile_host=phone, proxy=self)
+    )
 
 
   def join(self, phone, old_proxy):
@@ -192,7 +249,7 @@ class Proxy(Hexagon):
       id(new_proxy)
     ))
     for r in self.requests:
-      if r.phone == phone:
+      if r.mobile_host == phone:
         r.proxy = new_proxy
         return
 
@@ -238,23 +295,69 @@ class Proxy(Hexagon):
 
 
   def pass_token(self):
+    print("Sending token: Proxy {0} => Proxy {1}".format(
+      id(self),
+      id(self.next_proxy)
+    ))
+    self.is_serving_requests = False
     self.next_proxy.send_token()
     self.has_token = False
 
 
   def progress(self):
+    print("#"*80)
     if self.has_token:
       # If the Request Queue is not empty, then it must be served.
-      if self.requests and len(self.grant_queue) == 0:
+      if self.requests and len(self.grant_queue) == 0 and not self.is_serving_requests:
+        print("Proxy {0} has {1} requests!"
+              "Emptying the request queue into the grant queue.".format(
+          id(self),
+          len(self.requests)
+        ))
         self.grant_queue = list(self.requests)
         self.requests = []
 
       # If the Grant Queue is not empty, serve the next grant.
       if self.grant_queue:
+        self.is_serving_requests = True
+        print("State of grant queue for proxy {0}:".format(id(self)))
+        print(self.grant_queue)
         request = self.grant_queue.pop(0)
+        print("Proxy {0} is granting request of phone {1}".format(
+          id(self),
+          request.mobile_host.id
+        ))
+        request.proxy.serve_token(request.mobile_host)
 
       else:
         self.pass_token()
+
+
+  def serve_token(self, phone):
+    # The mobile host is under the calling proxy's jurisdiction.
+    print("Proxy {0} will now grant the token to phone {1}".format(
+      id(self),
+      phone.id
+    ))
+    print("Searching for MSS of phone {0}".format(phone.id))
+    for mss in self.internal_hexagons:
+      if mss.has(phone):
+        print("MSS {0} indicates that phone {1} is within its jurisdiction".format(
+          id(mss),
+          phone.id
+        ))
+        print("Proxy {0} is granting MSS {1} the token, to grant to phone {2}".format(
+          id(self),
+          id(mss),
+          phone.id
+        ))
+        mss.serve_token(phone)
+        print("Proxy {0} has received token back from MSS {1} / Phone {2}".format(
+          id(self),
+          id(mss),
+          phone.id
+        ))
+        return
 
 
   def draw(self, color=None, width=0):
@@ -419,18 +522,19 @@ if __name__ == "__main__":
             # The phone initiating the call is the currently selected phone.
             # We must now make sure the callee is not the same as the caller.
             mobile_host = phone_dict[key]
-            mobile_host.request()
-            print("Phone #{0} is doing something!".format(mobile_host.id))
+            mobile_host.request_token()
 
           else:
             # The user is pressing only one key, which is a label for another
             #  phone. Make this phone the currently selected phone.
+            print("Changing focus from phone {0} to phone {1}".format(
+              selected_phone.id,
+              phone_dict[key].id
+            ))
             selected_phone = phone_dict[key]
-            print("Phone #{0} is selected.".format(selected_phone.id))
 
         # Execute the next step of the Token Ring algorithm.
         elif event.key == pygame.K_SPACE:
-          print("SPACE!!!")
           token_holder.progress()
           if not token_holder.has_token:
             token_holder = token_holder.next_proxy
