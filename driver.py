@@ -61,7 +61,7 @@ def create_phones(cells):
 
   phone_dict = {}
   for l in phone_labels:
-    phone_dict[l] = Phone(
+    phone_dict[l] = MobileHost(
       char=l.upper(),
       center=phone_locations[phone_labels.index(l)],
       cells=PCS_cells
@@ -78,11 +78,6 @@ class MobileHost(Phone):
     pass
 
 
-  def has_moved_to_new_cell(self):
-    # Only return True if the mobile host has moved to a new proxy region.
-    pass
-
-
   def update_location(self):
     # Preserve a reference to the old MSS before updating.
     old_MSS = self.PCS_cell
@@ -92,6 +87,11 @@ class MobileHost(Phone):
     Phone.update_location(self)
 
     # Join this MSS, passing in a reference to the old MSS.
+    print("Mobile host {0} has moved from MSS {1} to MSS {2}".format(
+      self.id,
+      id(old_MSS),
+      id(self.PCS_cell)
+    ))
     self.PCS_cell.join(self, old_MSS)
 
 
@@ -108,7 +108,7 @@ from hexagon import rotate_60
 from hexagon import I_2
 class MobileServiceStation(Hexagon):
   # MSS must know which proxy it is under. When a mobile host joins this MSS,
-  #  the MSS must be able to compare the identify of the proxy in which the
+  #  the MSS must be able to compare the identity of the proxy in which the
   #  mobile host was previously in with this MSS's current proxy.
   #  If the mobile host has made a wide-area move, this MSS must inform the
   #  initial proxy of the new proxy.
@@ -121,7 +121,13 @@ class MobileServiceStation(Hexagon):
 
 
   def join(self, mobile_host, old_station):
-    pass
+    print("MSS {0} received JOIN from phone {1}".format(
+      id(self),
+      mobile_host.id
+    ))
+    if old_station.parent != self.parent:
+      proxy_of_old_MSS = old_station.parent
+      self.parent.join(mobile_host, proxy_of_old_MSS)
 
 
   def remove_from_Q(self, mobile_host):
@@ -163,6 +169,32 @@ class Proxy(Hexagon):
     self.has_token = False
     self.requests = []
     self.grant_queue = []
+
+
+  def join(self, phone, old_proxy):
+    # Test if the mobile phone has made a wide-area move. If the mobile phone
+    #  is no longer under the proxy in which it made its request, then that
+    #  proxy must be updated.
+    print("Proxy {0} has received JOIN from phone {1}, who made a request on proxy {2}".format(
+      id(self),
+      phone.id,
+      id(old_proxy)
+    ))
+    old_proxy.update_request(phone, self)
+
+
+  def update_request(self, phone, new_proxy):
+    # A request has been made by the phone to this proxy. However, the phone
+    #  has moved, and the request information must be updated.
+    print("Updating request from phone {0} on proxy {1} to point to proxy {2}".format(
+      phone.id,
+      id(self),
+      id(new_proxy)
+    ))
+    for r in self.requests:
+      if r.phone == phone:
+        r.proxy = new_proxy
+        return
 
 
   def create_internal_MSSs(self):
@@ -236,7 +268,7 @@ class Proxy(Hexagon):
         pygame.display.get_surface(),
         (218,165,32), # goldenrod
         transform_points_for_pygame([circle_center])[0],
-        10
+        70
       )
 
 
