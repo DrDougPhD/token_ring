@@ -78,8 +78,7 @@ class Proxy(Hexagon):
 
 
   def create_internal_MSSs(self):
-    M = 2*rotate_60 + I_2
-    new_north_direction = M.I*self.northeast_dir
+    new_north_direction = self.M_I*self.northeast_dir
     new_side_length = numpy.linalg.norm(new_north_direction)
 
     if (self.depth+1)%2 == 0:

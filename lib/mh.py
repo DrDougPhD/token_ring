@@ -62,7 +62,7 @@ class MobileHost(Phone):
       old_MSS.unjoin(self)
 
     else:
-       print("Mobile host {0} has moved to MSS {1}".format(
+      print("Mobile host {0} has moved to MSS {1}".format(
         self.id,
         self.PCS_cell.id
       ))

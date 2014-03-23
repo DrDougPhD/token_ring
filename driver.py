@@ -32,7 +32,8 @@ if __name__ == "__main__":
   screen.fill(BACKGROUND_COLOR)
 
   #from lib.proxy import setup_coverage_areas
-  from lib.replication import setup_coverage_areas
+  #from lib.replication import setup_coverage_areas
+  from lib.inform import setup_coverage_areas
   hexagons = setup_coverage_areas(X_RES, Y_RES)
   PCS_cells = hexagons[-1]
   current_depth = len(hexagons)-1
