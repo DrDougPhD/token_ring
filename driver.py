@@ -31,9 +31,17 @@ if __name__ == "__main__":
   BACKGROUND_COLOR = (127, 127, 127)
   screen.fill(BACKGROUND_COLOR)
 
-  #from lib.proxy import setup_coverage_areas
-  #from lib.replication import setup_coverage_areas
-  from lib.inform import setup_coverage_areas
+  if sys.argv[-1] == "0" or sys.argv[-1].lower() == "proxy":
+    print("Using Proxy Scheme for Token Ring Algorithm")
+    from lib.proxy import setup_coverage_areas
+  elif sys.argv[-1] == "1" or sys.argv[-1][:3].lower() == "rep":
+    print("Using Replication Scheme for Token Ring Algorithm")
+    from lib.replication import setup_coverage_areas
+  else:
+    print("Using Inform Scheme for Token Ring Algorithm")
+    from lib.inform import setup_coverage_areas
+
+  print("#"*40)
   hexagons = setup_coverage_areas(X_RES, Y_RES)
   PCS_cells = hexagons[-1]
   current_depth = len(hexagons)-1

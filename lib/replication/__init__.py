@@ -44,7 +44,8 @@ class ReplicationCreator(Hexagon):
       northern_most_unit_vector_direction=north_unit_vector,
       side_length=new_side_length,
       parent=parent_hexagon,
-      depth=parent_hexagon.depth+1
+      depth=parent_hexagon.depth+1,
+      color=parent_hexagon.color
     )
     for i in range(self.number_of_sides):
       center = internal_center_hexagon.get_center_point_of_neighbor(i)
@@ -53,7 +54,8 @@ class ReplicationCreator(Hexagon):
         northern_most_unit_vector_direction=north_unit_vector,
         side_length=new_side_length,
         parent=parent_hexagon,
-        depth=parent_hexagon.depth+1
+        depth=parent_hexagon.depth+1,
+        color=parent_hexagon.color
       )
 
     # Set the center hexagon.
