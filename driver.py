@@ -2,11 +2,22 @@
 #  x increasing from left to right, and y increasing from up to down.
 #  Thus, the northern-most vertex of a hexagon drawn in this manner will have
 #  a y-value less than the center of the hexagon.
-import numpy
+import sys
+
+# Check to make sure necessary dependencies are installed.
+try:
+    import numpy
+    import pygame
+    import shapely.geometry
+
+except ImportError as e:
+    print(e)
+    print("Please install this and try again.")
+    sys.exit(0)
+
 import math
 import random
 import time
-import pygame
 random.seed(time.time())
 
 from settings import X_RES
